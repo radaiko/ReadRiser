@@ -207,32 +207,18 @@ public class PackageInfoService {
     /// </summary>
     private static NuGetPackageMetadata? ParseNuspecContent(string nuspecContent) {
         try {
-            // Simple XML parsing for nuspec content
-            var lines = nuspecContent.Split('\n');
+            var document = XDocument.Parse(nuspecContent);
 
-            string? id = null, version = null, title = null, description = null, authors = null, projectUrl = null, licenseUrl = null, licenseExpression = null;
-
-            foreach (var line in lines) {
-                var trimmedLine = line.Trim();
-                if (trimmedLine.StartsWith("<id>"))
-                    id = ExtractXmlValue(trimmedLine, "id");
-                else if (trimmedLine.StartsWith("<version>"))
-                    version = ExtractXmlValue(trimmedLine, "version");
-                else if (trimmedLine.StartsWith("<title>"))
-                    title = ExtractXmlValue(trimmedLine, "title");
-                else if (trimmedLine.StartsWith("<description>"))
-                    description = ExtractXmlValue(trimmedLine, "description");
-                else if (trimmedLine.StartsWith("<authors>"))
-                    authors = ExtractXmlValue(trimmedLine, "authors");
-                else if (trimmedLine.StartsWith("<projectUrl>"))
-                    projectUrl = ExtractXmlValue(trimmedLine, "projectUrl");
-                else if (trimmedLine.StartsWith("<licenseUrl>"))
-                    licenseUrl = ExtractXmlValue(trimmedLine, "licenseUrl");
-                else if (trimmedLine.StartsWith("<license ") && trimmedLine.Contains("type=\"expression\"")) {
-                    licenseExpression = ExtractXmlValue(trimmedLine, "license");
-                }
-            }
-
+            string? id = document.Root?.Element("metadata")?.Element("id")?.Value;
+            string? version = document.Root?.Element("metadata")?.Element("version")?.Value;
+            string? title = document.Root?.Element("metadata")?.Element("title")?.Value;
+            string? description = document.Root?.Element("metadata")?.Element("description")?.Value;
+            string? authors = document.Root?.Element("metadata")?.Element("authors")?.Value;
+            string? projectUrl = document.Root?.Element("metadata")?.Element("projectUrl")?.Value;
+            string? licenseUrl = document.Root?.Element("metadata")?.Element("licenseUrl")?.Value;
+            string? licenseExpression = document.Root?.Element("metadata")?.Element("license")?.Attribute("type")?.Value == "expression"
+                ? document.Root?.Element("metadata")?.Element("license")?.Value
+                : null;
             return new NuGetPackageMetadata(id, version, title, description, authors, projectUrl, licenseUrl, licenseExpression, null);
         } catch {
             return null;
