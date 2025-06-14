@@ -83,7 +83,7 @@ public class PackageInfoService {
                 var version = parts[1];
 
                 // Add task to fetch package metadata
-                fetchTasks.Add(Task.Run(async () => {
+                fetchTasks.Add(async () => {
                     var nugetMetadata = await GetNuGetPackageMetadataAsync(name, version);
                     return new PackageInfo(
                         Name: name,
