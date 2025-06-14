@@ -12,11 +12,11 @@ public static class Basic {
             .WithOpenApi();
 
         // Health check endpoint
-        group.MapGet("/health", () => {
+        group.MapGet("/health", (IWebHostEnvironment env) => {
             var response = new HealthResponse(
                 Status: "Healthy",
                 Timestamp: DateTime.UtcNow,
-                Environment: Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"
+                Environment: env.EnvironmentName
             );
             return Results.Ok(response);
         })
@@ -29,7 +29,7 @@ public static class Basic {
         .WithOpenApi();
 
         // Status endpoint with available endpoints and version
-        group.MapGet("/status", (IServiceProvider serviceProvider) => {
+        group.MapGet("/status", (IServiceProvider serviceProvider, IWebHostEnvironment env) => {
             var apiDescriptionGroupCollectionProvider = serviceProvider.GetService<IApiDescriptionGroupCollectionProvider>();
             var endpoints = new List<EndpointInfo>();
 
@@ -56,7 +56,7 @@ public static class Basic {
                 ApplicationName: "RR.Http",
                 Version: version,
                 Timestamp: DateTime.UtcNow,
-                Environment: Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+                Environment: env.EnvironmentName,
                 AvailableEndpoints: endpoints
             );
 
