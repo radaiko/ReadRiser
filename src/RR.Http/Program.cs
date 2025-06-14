@@ -12,10 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 // Add Swagger services for better schema generation
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
+builder.Services.AddSwaggerGen(c => {
+    c.SwaggerDoc("v1", new OpenApiInfo {
         Title = "ReadRiser API",
         Version = "v1",
         Description = "API for ReadRiser application"
@@ -27,19 +25,20 @@ builder.Services.AddSwaggerGen(c =>
     // Include XML comments if available
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
+    if (File.Exists(xmlPath)) {
         c.IncludeXmlComments(xmlPath);
     }
 
     // Also include XML comments from referenced assemblies
     var dtoXmlFile = "RR.DTO.xml";
     var dtoXmlPath = Path.Combine(AppContext.BaseDirectory, dtoXmlFile);
-    if (File.Exists(dtoXmlPath))
-    {
+    if (File.Exists(dtoXmlPath)) {
         c.IncludeXmlComments(dtoXmlPath);
     }
 });
+
+// Add HTTP client for external API calls
+builder.Services.AddHttpClient();
 
 // Add custom services
 builder.Services.AddScoped<PackageInfoService>();
@@ -50,12 +49,10 @@ builder.Services.AddEndpointsApiExplorer();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-    {
+    app.MapScalarApiReference(options => {
         options.Title = "ReadRiser API Documentation";
         options.Theme = ScalarTheme.Purple;
         options.ShowSidebar = true;

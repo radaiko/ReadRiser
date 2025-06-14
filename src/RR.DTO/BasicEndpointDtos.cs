@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace RR.DTO;
@@ -242,4 +242,26 @@ public record CreditsResponse(
     [Required]
     [Range(0, int.MaxValue)]
     int TotalPackages
+);
+
+/// <summary>
+/// NuGet package metadata from the API
+/// </summary>
+public record NuGetPackageMetadata(
+    string? Id,
+    string? Version,
+    string? Title,
+    string? Description,
+    string? Authors,
+    string? ProjectUrl,
+    string? LicenseUrl,
+    string? LicenseExpression,
+    string[]? Tags
+);
+
+/// <summary>
+/// NuGet API response for package registration
+/// </summary>
+public record NuGetRegistrationResponse(
+    NuGetPackageMetadata? Data
 );

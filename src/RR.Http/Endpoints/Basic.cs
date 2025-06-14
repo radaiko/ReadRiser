@@ -5,17 +5,14 @@ using RR.Http.Services;
 
 namespace RRHttp.Endpoints;
 
-public static class Basic
-{
-    public static void MapBasicEndpoints(this IEndpointRouteBuilder app)
-    {
+public static class Basic {
+    public static void MapBasicEndpoints(this IEndpointRouteBuilder app) {
         var group = app.MapGroup("/api/v1")
             .WithTags("Basic")
             .WithOpenApi();
 
         // Health check endpoint
-        group.MapGet("/health", () =>
-        {
+        group.MapGet("/health", () => {
             var response = new HealthResponse(
                 Status: "Healthy",
                 Timestamp: DateTime.UtcNow,
@@ -32,13 +29,11 @@ public static class Basic
         .WithOpenApi();
 
         // Status endpoint with available endpoints and version
-        group.MapGet("/status", (IServiceProvider serviceProvider) =>
-        {
+        group.MapGet("/status", (IServiceProvider serviceProvider) => {
             var apiDescriptionGroupCollectionProvider = serviceProvider.GetService<IApiDescriptionGroupCollectionProvider>();
             var endpoints = new List<EndpointInfo>();
 
-            if (apiDescriptionGroupCollectionProvider != null)
-            {
+            if (apiDescriptionGroupCollectionProvider != null) {
                 var apiDescriptions = apiDescriptionGroupCollectionProvider.ApiDescriptionGroups.Items
                     .SelectMany(g => g.Items)
                     .Where(api => !string.IsNullOrEmpty(api.RelativePath))
@@ -76,8 +71,7 @@ public static class Basic
         .WithOpenApi();
 
         // Credits endpoint with package license information
-        group.MapGet("/credits", async (PackageInfoService packageInfoService) =>
-        {
+        group.MapGet("/credits", async (PackageInfoService packageInfoService) => {
             var packages = await packageInfoService.GetPackageInfoAsync();
             var assembly = Assembly.GetExecutingAssembly();
             var version = assembly.GetName().Version?.ToString() ?? "1.0.0";

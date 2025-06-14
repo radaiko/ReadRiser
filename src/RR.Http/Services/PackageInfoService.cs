@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using RR.DTO;
@@ -8,21 +7,20 @@ namespace RR.Http.Services;
 /// <summary>
 /// Service for gathering information about NuGet packages used in the application
 /// </summary>
-public class PackageInfoService
-{
+public class PackageInfoService {
     private readonly ILogger<PackageInfoService> _logger;
+    private readonly HttpClient _httpClient;
 
-    public PackageInfoService(ILogger<PackageInfoService> logger)
-    {
+    public PackageInfoService(ILogger<PackageInfoService> logger, HttpClient httpClient) {
         _logger = logger;
+        _httpClient = httpClient;
     }
 
     /// <summary>
     /// Gets information about all packages used in the application
     /// </summary>
     /// <returns>List of package information including licenses</returns>
-    public async Task<List<PackageInfo>> GetPackageInfoAsync()
-    {
+    public async Task<List<PackageInfo>> GetPackageInfoAsync() {
         var packages = await GetPackagesFromProjectAssetsAsync();
         _logger.LogInformation("Retrieved information for {PackageCount} packages from project.assets.json", packages.Count);
         return packages.OrderBy(p => p.Name).ToList();
@@ -31,18 +29,15 @@ public class PackageInfoService
     /// <summary>
     /// Gets packages from project.assets.json file automatically
     /// </summary>
-    private async Task<List<PackageInfo>> GetPackagesFromProjectAssetsAsync()
-    {
+    private async Task<List<PackageInfo>> GetPackagesFromProjectAssetsAsync() {
         var packages = new List<PackageInfo>();
 
-        try
-        {
+        try {
             // Find the project.assets.json file
             var currentDirectory = Directory.GetCurrentDirectory();
             var projectAssetsPath = Path.Combine(currentDirectory, "obj", "project.assets.json");
 
-            if (!File.Exists(projectAssetsPath))
-            {
+            if (!File.Exists(projectAssetsPath)) {
                 _logger.LogWarning("project.assets.json not found at {Path}", projectAssetsPath);
                 return packages;
             }
@@ -50,16 +45,14 @@ public class PackageInfoService
             var jsonContent = await File.ReadAllTextAsync(projectAssetsPath);
             var jsonDocument = JsonNode.Parse(jsonContent);
 
-            if (jsonDocument == null)
-            {
+            if (jsonDocument == null) {
                 _logger.LogWarning("Failed to parse project.assets.json");
                 return packages;
             }
 
             // Get the libraries section which contains all package information
             var libraries = jsonDocument["libraries"]?.AsObject();
-            if (libraries == null)
-            {
+            if (libraries == null) {
                 _logger.LogWarning("No libraries section found in project.assets.json");
                 return packages;
             }
@@ -67,44 +60,58 @@ public class PackageInfoService
             // Get direct dependencies from the project section
             var directDependencies = GetDirectDependencies(jsonDocument);
 
-            foreach (var library in libraries)
-            {
+            foreach (var library in libraries) {
                 var packageName = library.Key;
                 var packageInfo = library.Value?.AsObject();
 
-                if (packageInfo == null) continue;
+                if (packageInfo == null)
+                    continue;
 
                 // Skip if not a package (could be project reference)
                 var type = packageInfo["type"]?.GetValue<string>();
-                if (type != "package") continue;
+                if (type != "package")
+                    continue;
 
                 // Parse package name and version from the key (format: "PackageName/Version")
                 var parts = packageName.Split('/');
-                if (parts.Length != 2) continue;
+                if (parts.Length != 2)
+                    continue;
 
                 var name = parts[0];
                 var version = parts[1];
 
                 // Only include direct dependencies or well-known packages
-                if (!directDependencies.Contains(name) && !IsWellKnownPackage(name)) continue;
+                var wellKnownPackages = new[]
+                {
+                    "Microsoft.AspNetCore.OpenApi",
+                    "Microsoft.OpenApi",
+                    "Scalar.AspNetCore",
+                    "Swashbuckle.AspNetCore.Swagger",
+                    "Swashbuckle.AspNetCore.SwaggerGen",
+                    "Swashbuckle.AspNetCore.SwaggerUI"
+                };
+
+                if (!directDependencies.Contains(name) && !wellKnownPackages.Contains(name))
+                    continue;
+
+                // Fetch package metadata from NuGet.org
+                var nugetMetadata = await GetNuGetPackageMetadataAsync(name, version);
 
                 var packageInfoDto = new PackageInfo(
                     Name: name,
                     Version: version,
-                    LicenseType: GetLicenseType(name),
-                    LicenseUrl: GetLicenseUrl(name),
-                    ProjectUrl: GetProjectUrl(name),
-                    Authors: GetAuthors(name),
-                    Description: GetDescription(name)
+                    LicenseType: GetLicenseType(nugetMetadata),
+                    LicenseUrl: nugetMetadata?.LicenseUrl ?? "Unknown",
+                    ProjectUrl: nugetMetadata?.ProjectUrl ?? $"https://www.nuget.org/packages/{name}",
+                    Authors: nugetMetadata?.Authors ?? "Unknown",
+                    Description: nugetMetadata?.Description ?? nugetMetadata?.Title ?? $"NuGet package: {name}"
                 );
 
                 packages.Add(packageInfoDto);
             }
 
             _logger.LogInformation("Discovered {Count} packages from project.assets.json", packages.Count);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             _logger.LogError(ex, "Error reading packages from project.assets.json");
         }
 
@@ -114,30 +121,22 @@ public class PackageInfoService
     /// <summary>
     /// Gets direct dependencies from the project section
     /// </summary>
-    private static HashSet<string> GetDirectDependencies(JsonNode jsonDocument)
-    {
+    private static HashSet<string> GetDirectDependencies(JsonNode jsonDocument) {
         var dependencies = new HashSet<string>();
 
-        try
-        {
+        try {
             var frameworks = jsonDocument["project"]?["frameworks"]?.AsObject();
-            if (frameworks != null)
-            {
-                foreach (var framework in frameworks)
-                {
+            if (frameworks != null) {
+                foreach (var framework in frameworks) {
                     var deps = framework.Value?["dependencies"]?.AsObject();
-                    if (deps != null)
-                    {
-                        foreach (var dep in deps)
-                        {
+                    if (deps != null) {
+                        foreach (var dep in deps) {
                             dependencies.Add(dep.Key);
                         }
                     }
                 }
             }
-        }
-        catch (Exception)
-        {
+        } catch (Exception) {
             // Ignore errors in parsing dependencies
         }
 
@@ -145,91 +144,137 @@ public class PackageInfoService
     }
 
     /// <summary>
-    /// Checks if a package is a well-known system package that should be included
-    /// </summary>
-    private static bool IsWellKnownPackage(string packageName)
-    {
-        var wellKnownPackages = new[]
-        {
-            "Microsoft.AspNetCore.OpenApi",
-            "Microsoft.OpenApi",
-            "Scalar.AspNetCore",
-            "Swashbuckle.AspNetCore.Swagger",
-            "Swashbuckle.AspNetCore.SwaggerGen",
-            "Swashbuckle.AspNetCore.SwaggerUI"
-        };
-
-        return wellKnownPackages.Contains(packageName);
-    }
-
-    /// <summary>
     /// Gets the license type for a package
     /// </summary>
-    private static string GetLicenseType(string packageName)
-    {
-        return packageName.StartsWith("Microsoft.") ? "MIT" : "MIT";
+    private static string GetLicenseType(NuGetPackageMetadata? metadata) {
+        if (!string.IsNullOrEmpty(metadata?.LicenseExpression)) {
+            return metadata.LicenseExpression;
+        }
+
+        if (!string.IsNullOrEmpty(metadata?.LicenseUrl)) {
+            // Try to determine license type from URL
+            var licenseUrl = metadata.LicenseUrl.ToLowerInvariant();
+            if (licenseUrl.Contains("mit"))
+                return "MIT";
+            if (licenseUrl.Contains("apache"))
+                return "Apache-2.0";
+            if (licenseUrl.Contains("bsd"))
+                return "BSD";
+            if (licenseUrl.Contains("gpl"))
+                return "GPL";
+        }
+
+        return "Unknown";
     }
 
     /// <summary>
-    /// Gets the license URL for a package
+    /// Fetches package metadata from NuGet.org API
     /// </summary>
-    private static string GetLicenseUrl(string packageName)
-    {
-        return packageName switch
-        {
-            var name when name.StartsWith("Microsoft.") => "https://licenses.nuget.org/MIT",
-            "Scalar.AspNetCore" => "https://github.com/scalar/scalar/blob/main/LICENSE",
-            var name when name.StartsWith("Swashbuckle.") => "https://github.com/domaindrivendev/Swashbuckle.AspNetCore/blob/master/LICENSE",
-            _ => "https://licenses.nuget.org/MIT"
-        };
+    private async Task<NuGetPackageMetadata?> GetNuGetPackageMetadataAsync(string packageName, string version) {
+        try {
+            var url = $"https://api.nuget.org/v3-flatcontainer/{packageName.ToLowerInvariant()}/{version}/{packageName.ToLowerInvariant()}.nuspec";
+
+            // First try to get the .nuspec file
+            var nuspecResponse = await _httpClient.GetAsync(url);
+            if (nuspecResponse.IsSuccessStatusCode) {
+                var nuspecContent = await nuspecResponse.Content.ReadAsStringAsync();
+                return ParseNuspecContent(nuspecContent);
+            }
+
+            // Fallback to registration API
+            var registrationUrl = $"https://api.nuget.org/v3/registration5-gz-semver2/{packageName.ToLowerInvariant()}/{version}.json";
+            var registrationResponse = await _httpClient.GetAsync(registrationUrl);
+
+            if (registrationResponse.IsSuccessStatusCode) {
+                var registrationContent = await registrationResponse.Content.ReadAsStringAsync();
+                var registrationData = JsonSerializer.Deserialize<JsonNode>(registrationContent);
+
+                return ParseRegistrationData(registrationData);
+            }
+
+            _logger.LogWarning("Could not fetch metadata for package {PackageName} version {Version}", packageName, version);
+            return null;
+        } catch (Exception ex) {
+            _logger.LogError(ex, "Error fetching metadata for package {PackageName} version {Version}", packageName, version);
+            return null;
+        }
     }
 
     /// <summary>
-    /// Gets the project URL for a package
+    /// Parses nuspec XML content to extract metadata
     /// </summary>
-    private static string GetProjectUrl(string packageName)
-    {
-        return packageName switch
-        {
-            "Microsoft.AspNetCore.OpenApi" => "https://github.com/dotnet/aspnetcore",
-            "Microsoft.OpenApi" => "https://github.com/microsoft/OpenAPI.NET",
-            "Scalar.AspNetCore" => "https://github.com/scalar/scalar",
-            var name when name.StartsWith("Swashbuckle.") => "https://github.com/domaindrivendev/Swashbuckle.AspNetCore",
-            var name when name.StartsWith("Microsoft.") => "https://github.com/dotnet/aspnetcore",
-            _ => "https://www.nuget.org/packages/" + packageName
-        };
+    private static NuGetPackageMetadata? ParseNuspecContent(string nuspecContent) {
+        try {
+            // Simple XML parsing for nuspec content
+            var lines = nuspecContent.Split('\n');
+
+            string? id = null, version = null, title = null, description = null, authors = null, projectUrl = null, licenseUrl = null, licenseExpression = null;
+
+            foreach (var line in lines) {
+                var trimmedLine = line.Trim();
+                if (trimmedLine.StartsWith("<id>"))
+                    id = ExtractXmlValue(trimmedLine, "id");
+                else if (trimmedLine.StartsWith("<version>"))
+                    version = ExtractXmlValue(trimmedLine, "version");
+                else if (trimmedLine.StartsWith("<title>"))
+                    title = ExtractXmlValue(trimmedLine, "title");
+                else if (trimmedLine.StartsWith("<description>"))
+                    description = ExtractXmlValue(trimmedLine, "description");
+                else if (trimmedLine.StartsWith("<authors>"))
+                    authors = ExtractXmlValue(trimmedLine, "authors");
+                else if (trimmedLine.StartsWith("<projectUrl>"))
+                    projectUrl = ExtractXmlValue(trimmedLine, "projectUrl");
+                else if (trimmedLine.StartsWith("<licenseUrl>"))
+                    licenseUrl = ExtractXmlValue(trimmedLine, "licenseUrl");
+                else if (trimmedLine.StartsWith("<license ") && trimmedLine.Contains("type=\"expression\"")) {
+                    licenseExpression = ExtractXmlValue(trimmedLine, "license");
+                }
+            }
+
+            return new NuGetPackageMetadata(id, version, title, description, authors, projectUrl, licenseUrl, licenseExpression, null);
+        } catch {
+            return null;
+        }
     }
 
     /// <summary>
-    /// Gets the authors for a package
+    /// Extracts value from simple XML element
     /// </summary>
-    private static string GetAuthors(string packageName)
-    {
-        return packageName switch
-        {
-            var name when name.StartsWith("Microsoft.") => "Microsoft",
-            "Scalar.AspNetCore" => "Scalar",
-            var name when name.StartsWith("Swashbuckle.") => "Richard Morris, Rik Morris",
-            _ => "Unknown"
-        };
+    private static string? ExtractXmlValue(string xmlLine, string elementName) {
+        var startTag = $"<{elementName}>";
+        var endTag = $"</{elementName}>";
+
+        var startIndex = xmlLine.IndexOf(startTag);
+        var endIndex = xmlLine.IndexOf(endTag);
+
+        if (startIndex >= 0 && endIndex > startIndex) {
+            return xmlLine.Substring(startIndex + startTag.Length, endIndex - startIndex - startTag.Length).Trim();
+        }
+
+        return null;
     }
 
     /// <summary>
-    /// Gets the description for a package
+    /// Parses registration API JSON data
     /// </summary>
-    private static string GetDescription(string packageName)
-    {
-        return packageName switch
-        {
-            "Microsoft.AspNetCore.OpenApi" => "Provides OpenAPI specification generation for ASP.NET Core applications",
-            "Microsoft.OpenApi" => "The OpenAPI.NET SDK contains a useful object model for OpenAPI documents in .NET",
-            "Scalar.AspNetCore" => "Modern API documentation and testing interface for ASP.NET Core applications",
-            "Swashbuckle.AspNetCore" => "Swagger tools for documenting APIs built on ASP.NET Core",
-            "Swashbuckle.AspNetCore.Swagger" => "Swagger tools for documenting APIs built on ASP.NET Core - Swagger middleware",
-            "Swashbuckle.AspNetCore.SwaggerGen" => "Swagger tools for documenting APIs built on ASP.NET Core - Swagger document generation",
-            "Swashbuckle.AspNetCore.SwaggerUI" => "Swagger tools for documenting APIs built on ASP.NET Core - Swagger UI",
-            var name when name.StartsWith("Microsoft.") => $".NET library: {name}",
-            _ => $"NuGet package: {packageName}"
-        };
+    private static NuGetPackageMetadata? ParseRegistrationData(JsonNode? registrationData) {
+        try {
+            var catalogEntry = registrationData?["catalogEntry"];
+            if (catalogEntry == null)
+                return null;
+
+            var id = catalogEntry["id"]?.GetValue<string>();
+            var version = catalogEntry["version"]?.GetValue<string>();
+            var title = catalogEntry["title"]?.GetValue<string>();
+            var description = catalogEntry["description"]?.GetValue<string>();
+            var authors = catalogEntry["authors"]?.GetValue<string>();
+            var projectUrl = catalogEntry["projectUrl"]?.GetValue<string>();
+            var licenseUrl = catalogEntry["licenseUrl"]?.GetValue<string>();
+            var licenseExpression = catalogEntry["licenseExpression"]?.GetValue<string>();
+
+            return new NuGetPackageMetadata(id, version, title, description, authors, projectUrl, licenseUrl, licenseExpression, null);
+        } catch {
+            return null;
+        }
     }
 }
