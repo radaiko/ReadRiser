@@ -23,55 +23,9 @@ public class PackageInfoService
     /// <returns>List of package information including licenses</returns>
     public async Task<List<PackageInfo>> GetPackageInfoAsync()
     {
-        var packages = new List<PackageInfo>();
-
-        try
-        {
-            // Try to get packages from project.assets.json
-            var discoveredPackages = await GetPackagesFromProjectAssetsAsync();
-            if (discoveredPackages.Any())
-            {
-                packages.AddRange(discoveredPackages);
-                _logger.LogInformation("Retrieved information for {PackageCount} packages from project.assets.json", packages.Count);
-            }
-            else
-            {
-                // Fallback to known packages if project.assets.json is not available
-                packages.AddRange(GetKnownPackages());
-                _logger.LogInformation("Retrieved information for {PackageCount} packages from fallback list", packages.Count);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving package information, using fallback");
-            packages.AddRange(GetKnownPackages());
-        }
-
+        var packages = await GetPackagesFromProjectAssetsAsync();
+        _logger.LogInformation("Retrieved information for {PackageCount} packages from project.assets.json", packages.Count);
         return packages.OrderBy(p => p.Name).ToList();
-    }
-
-    /// <summary>
-    /// Returns fallback information about core packages when automatic discovery fails
-    /// </summary>
-    private static List<PackageInfo> GetKnownPackages()
-    {
-        // Fallback list of core packages - only the essential ones
-        var corePackages = new[]
-        {
-            ("Microsoft.AspNetCore.OpenApi", "9.0.0"),
-            ("Scalar.AspNetCore", "2.4.16"),
-            ("Swashbuckle.AspNetCore", "9.0.1")
-        };
-
-        return corePackages.Select(package => new PackageInfo(
-            Name: package.Item1,
-            Version: package.Item2,
-            LicenseType: GetLicenseType(package.Item1),
-            LicenseUrl: GetLicenseUrl(package.Item1),
-            ProjectUrl: GetProjectUrl(package.Item1),
-            Authors: GetAuthors(package.Item1),
-            Description: GetDescription(package.Item1)
-        )).ToList();
     }
 
     /// <summary>
@@ -80,13 +34,13 @@ public class PackageInfoService
     private async Task<List<PackageInfo>> GetPackagesFromProjectAssetsAsync()
     {
         var packages = new List<PackageInfo>();
-        
+
         try
         {
             // Find the project.assets.json file
             var currentDirectory = Directory.GetCurrentDirectory();
             var projectAssetsPath = Path.Combine(currentDirectory, "obj", "project.assets.json");
-            
+
             if (!File.Exists(projectAssetsPath))
             {
                 _logger.LogWarning("project.assets.json not found at {Path}", projectAssetsPath);
@@ -95,7 +49,7 @@ public class PackageInfoService
 
             var jsonContent = await File.ReadAllTextAsync(projectAssetsPath);
             var jsonDocument = JsonNode.Parse(jsonContent);
-            
+
             if (jsonDocument == null)
             {
                 _logger.LogWarning("Failed to parse project.assets.json");
@@ -117,7 +71,7 @@ public class PackageInfoService
             {
                 var packageName = library.Key;
                 var packageInfo = library.Value?.AsObject();
-                
+
                 if (packageInfo == null) continue;
 
                 // Skip if not a package (could be project reference)
@@ -163,7 +117,7 @@ public class PackageInfoService
     private static HashSet<string> GetDirectDependencies(JsonNode jsonDocument)
     {
         var dependencies = new HashSet<string>();
-        
+
         try
         {
             var frameworks = jsonDocument["project"]?["frameworks"]?.AsObject();
@@ -199,7 +153,7 @@ public class PackageInfoService
         {
             "Microsoft.AspNetCore.OpenApi",
             "Microsoft.OpenApi",
-            "Scalar.AspNetCore", 
+            "Scalar.AspNetCore",
             "Swashbuckle.AspNetCore.Swagger",
             "Swashbuckle.AspNetCore.SwaggerGen",
             "Swashbuckle.AspNetCore.SwaggerUI"
