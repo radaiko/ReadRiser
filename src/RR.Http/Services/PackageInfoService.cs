@@ -21,7 +21,7 @@ public class PackageInfoService {
     /// Gets information about all packages used in the application
     /// </summary>
     /// <returns>List of package information including licenses</returns>
-    public async Task<List<PackageInfo>> GetPackageInfoAsync() {
+    public virtual async Task<List<PackageInfo>> GetPackageInfoAsync() {
         var packages = await GetPackagesFromProjectAssetsAsync();
         _logger.LogInformation("Retrieved information for {PackageCount} packages from project.assets.json", packages.Count);
         return packages.OrderBy(p => p.Name).ToList();
