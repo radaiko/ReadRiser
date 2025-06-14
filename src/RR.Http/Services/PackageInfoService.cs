@@ -94,22 +94,24 @@ public class PackageInfoService {
                 if (!directDependencies.Contains(name) && !wellKnownPackages.Contains(name))
                     continue;
 
-                // Fetch package metadata from NuGet.org
-                var nugetMetadata = await GetNuGetPackageMetadataAsync(name, version);
-
-                var packageInfoDto = new PackageInfo(
-                    Name: name,
-                    Version: version,
-                    LicenseType: GetLicenseType(nugetMetadata),
-                    LicenseUrl: nugetMetadata?.LicenseUrl ?? "Unknown",
-                    ProjectUrl: nugetMetadata?.ProjectUrl ?? $"https://www.nuget.org/packages/{name}",
-                    Authors: nugetMetadata?.Authors ?? "Unknown",
-                    Description: nugetMetadata?.Description ?? nugetMetadata?.Title ?? $"NuGet package: {name}"
-                );
-
-                packages.Add(packageInfoDto);
+                // Add task to fetch package metadata
+                fetchTasks.Add(Task.Run(async () => {
+                    var nugetMetadata = await GetNuGetPackageMetadataAsync(name, version);
+                    return new PackageInfo(
+                        Name: name,
+                        Version: version,
+                        LicenseType: GetLicenseType(nugetMetadata),
+                        LicenseUrl: nugetMetadata?.LicenseUrl ?? "Unknown",
+                        ProjectUrl: nugetMetadata?.ProjectUrl ?? $"https://www.nuget.org/packages/{name}",
+                        Authors: nugetMetadata?.Authors ?? "Unknown",
+                        Description: nugetMetadata?.Description ?? nugetMetadata?.Title ?? $"NuGet package: {name}"
+                    );
+                }));
             }
 
+            // Wait for all tasks to complete
+            var results = await Task.WhenAll(fetchTasks);
+            packages.AddRange(results);
             _logger.LogInformation("Discovered {Count} packages from project.assets.json", packages.Count);
         } catch (Exception ex) {
             _logger.LogError(ex, "Error reading packages from project.assets.json");
