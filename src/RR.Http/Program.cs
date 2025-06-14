@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using RRHttp.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
