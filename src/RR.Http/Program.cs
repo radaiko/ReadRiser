@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 using RR.Http.Configuration;
+using RR.Http.Services;
 using RRHttp.Endpoints;
 using Scalar.AspNetCore;
 
@@ -39,6 +40,9 @@ builder.Services.AddSwaggerGen(c =>
         c.IncludeXmlComments(dtoXmlPath);
     }
 });
+
+// Add custom services
+builder.Services.AddScoped<PackageInfoService>();
 
 // Add API explorer services for endpoint discovery
 builder.Services.AddEndpointsApiExplorer();

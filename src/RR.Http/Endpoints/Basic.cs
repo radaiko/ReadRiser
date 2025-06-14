@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using RR.DTO;
+using RR.Http.Services;
 
 namespace RRHttp.Endpoints;
 
@@ -71,6 +72,31 @@ public static class Basic
         .WithDescription("Returns comprehensive API status information including version, environment, and automatically discovered endpoints. Useful for API discovery and monitoring.")
         .WithTags("Status", "Discovery")
         .Produces<StatusResponse>(StatusCodes.Status200OK, "application/json")
+        .ProducesValidationProblem()
+        .WithOpenApi();
+
+        // Credits endpoint with package license information
+        group.MapGet("/credits", async (PackageInfoService packageInfoService) =>
+        {
+            var packages = await packageInfoService.GetPackageInfoAsync();
+            var assembly = Assembly.GetExecutingAssembly();
+            var version = assembly.GetName().Version?.ToString() ?? "1.0.0";
+
+            var response = new CreditsResponse(
+                ApplicationName: "ReadRiser API",
+                ApplicationVersion: version,
+                GeneratedAt: DateTime.UtcNow,
+                Packages: packages,
+                TotalPackages: packages.Count
+            );
+
+            return Results.Ok(response);
+        })
+        .WithName("GetCredits")
+        .WithSummary("Get Third-Party Package Credits and Licenses")
+        .WithDescription("Returns comprehensive information about all third-party packages used in the application, including their licenses, authors, and project URLs. This endpoint helps ensure legal compliance by providing transparent attribution for all dependencies.")
+        .WithTags("Legal", "Attribution", "Licenses")
+        .Produces<CreditsResponse>(StatusCodes.Status200OK, "application/json")
         .ProducesValidationProblem()
         .WithOpenApi();
     }

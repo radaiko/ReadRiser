@@ -126,3 +126,120 @@ public record StatusResponse(
     [Required]
     List<EndpointInfo> AvailableEndpoints
 );
+
+/// <summary>
+/// Information about a NuGet package and its license
+/// </summary>
+/// <param name="Name">The name of the NuGet package</param>
+/// <param name="Version">The version of the package currently in use</param>
+/// <param name="LicenseType">The type of license (e.g., "MIT", "Apache-2.0", "BSD-3-Clause")</param>
+/// <param name="LicenseUrl">URL to the license text, if available</param>
+/// <param name="ProjectUrl">URL to the project homepage or repository</param>
+/// <param name="Authors">The authors or maintainers of the package</param>
+/// <param name="Description">Brief description of what the package does</param>
+/// <example>
+/// {
+///   "name": "Microsoft.AspNetCore.OpenApi",
+///   "version": "9.0.0",
+///   "licenseType": "MIT",
+///   "licenseUrl": "https://licenses.nuget.org/MIT",
+///   "projectUrl": "https://github.com/dotnet/aspnetcore",
+///   "authors": "Microsoft",
+///   "description": "Provides OpenAPI specification generation for ASP.NET Core applications"
+/// }
+/// </example>
+/// <remarks>
+/// This model contains essential legal and attribution information for third-party packages
+/// used in the application. Including this information helps ensure license compliance
+/// and provides transparency about dependencies.
+/// </remarks>
+public record PackageInfo(
+    [Description("The name of the NuGet package")]
+    [Required]
+    [StringLength(200, MinimumLength = 1)]
+    string Name,
+
+    [Description("The version of the package currently in use")]
+    [Required]
+    [StringLength(50, MinimumLength = 1)]
+    string Version,
+
+    [Description("The type of license under which the package is distributed")]
+    [StringLength(100)]
+    string? LicenseType,
+
+    [Description("URL to the full license text")]
+    [StringLength(500)]
+    string? LicenseUrl,
+
+    [Description("URL to the project homepage or source repository")]
+    [StringLength(500)]
+    string? ProjectUrl,
+
+    [Description("The authors or maintainers of the package")]
+    [StringLength(500)]
+    string? Authors,
+
+    [Description("Brief description of the package's functionality")]
+    [StringLength(1000)]
+    string? Description
+);
+
+/// <summary>
+/// Response model for credits endpoint containing all third-party package information
+/// </summary>
+/// <param name="ApplicationName">The name of the application</param>
+/// <param name="ApplicationVersion">The version of the application</param>
+/// <param name="GeneratedAt">When this credits information was generated</param>
+/// <param name="Packages">List of all third-party packages with their license information</param>
+/// <param name="TotalPackages">Total number of packages included</param>
+/// <example>
+/// {
+///   "applicationName": "ReadRiser API",
+///   "applicationVersion": "1.0.0",
+///   "generatedAt": "2025-06-14T10:30:00Z",
+///   "packages": [
+///     {
+///       "name": "Microsoft.AspNetCore.OpenApi",
+///       "version": "9.0.0",
+///       "licenseType": "MIT",
+///       "licenseUrl": "https://licenses.nuget.org/MIT",
+///       "projectUrl": "https://github.com/dotnet/aspnetcore",
+///       "authors": "Microsoft",
+///       "description": "Provides OpenAPI specification generation for ASP.NET Core applications"
+///     }
+///   ],
+///   "totalPackages": 1
+/// }
+/// </example>
+/// <remarks>
+/// This endpoint provides comprehensive attribution and license information for all
+/// third-party packages used in the application. This information is essential for
+/// legal compliance, especially in commercial applications where license requirements
+/// must be met. The data helps developers and legal teams understand the licensing
+/// obligations and attribution requirements for the application.
+/// </remarks>
+public record CreditsResponse(
+    [Description("The name of the application")]
+    [Required]
+    [StringLength(100, MinimumLength = 1)]
+    string ApplicationName,
+
+    [Description("The current version of the application")]
+    [Required]
+    [StringLength(50, MinimumLength = 1)]
+    string ApplicationVersion,
+
+    [Description("UTC timestamp when this credits information was generated")]
+    [Required]
+    DateTime GeneratedAt,
+
+    [Description("List of all third-party packages with their license and attribution information")]
+    [Required]
+    List<PackageInfo> Packages,
+
+    [Description("Total number of packages included in the credits")]
+    [Required]
+    [Range(0, int.MaxValue)]
+    int TotalPackages
+);
