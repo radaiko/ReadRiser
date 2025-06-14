@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Xml.Linq;
 using RR.DTO;
 
 namespace RR.Http.Services;
@@ -60,7 +59,6 @@ public class PackageInfoService {
 
             // Get direct dependencies from the project section
             var directDependencies = GetDirectDependencies(jsonDocument);
-            var fetchTasks = new List<Task<PackageInfo>>();
 
             foreach (var library in libraries) {
                 var packageName = library.Key;
@@ -81,6 +79,20 @@ public class PackageInfoService {
 
                 var name = parts[0];
                 var version = parts[1];
+
+                // Only include direct dependencies or well-known packages
+                var wellKnownPackages = new[]
+                {
+                    "Microsoft.AspNetCore.OpenApi",
+                    "Microsoft.OpenApi",
+                    "Scalar.AspNetCore",
+                    "Swashbuckle.AspNetCore.Swagger",
+                    "Swashbuckle.AspNetCore.SwaggerGen",
+                    "Swashbuckle.AspNetCore.SwaggerUI"
+                };
+
+                if (!directDependencies.Contains(name) && !wellKnownPackages.Contains(name))
+                    continue;
 
                 // Add task to fetch package metadata
                 fetchTasks.Add(async () => {
