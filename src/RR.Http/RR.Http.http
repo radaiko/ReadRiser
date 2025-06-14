@@ -1,0 +1,6 @@
+@RR.Http_HostAddress = http://localhost:5071
+
+GET {{RR.Http_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
