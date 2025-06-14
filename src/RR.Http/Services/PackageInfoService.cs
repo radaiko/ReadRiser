@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
 using RR.DTO;
 
 namespace RR.Http.Services;
@@ -60,6 +61,8 @@ public class PackageInfoService {
             // Get direct dependencies from the project section
             var directDependencies = GetDirectDependencies(jsonDocument);
 
+            var fetchTasks = new List<Task<PackageInfo>>();
+
             foreach (var library in libraries) {
                 var packageName = library.Key;
                 var packageInfo = library.Value?.AsObject();
@@ -95,7 +98,7 @@ public class PackageInfoService {
                     continue;
 
                 // Add task to fetch package metadata
-                fetchTasks.Add(async () => {
+                fetchTasks.Add(Task.Run(async () => {
                     var nugetMetadata = await GetNuGetPackageMetadataAsync(name, version);
                     return new PackageInfo(
                         Name: name,
