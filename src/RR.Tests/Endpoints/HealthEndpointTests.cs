@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using FluentAssertions;
 using RR.DTO;
 using RR.Tests.Infrastructure;
@@ -29,9 +28,7 @@ public class HealthEndpointTests : IClassFixture<TestWebApplicationFactory> {
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
 
         var content = await response.Content.ReadAsStringAsync();
-        var healthResponse = JsonSerializer.Deserialize<HealthResponse>(content, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var healthResponse = TestJsonHelper.Deserialize<HealthResponse>(content);
 
         healthResponse.Should().NotBeNull();
         healthResponse!.Status.Should().Be("Healthy");
@@ -52,13 +49,9 @@ public class HealthEndpointTests : IClassFixture<TestWebApplicationFactory> {
         var content1 = await response1.Content.ReadAsStringAsync();
         var content2 = await response2.Content.ReadAsStringAsync();
 
-        var healthResponse1 = JsonSerializer.Deserialize<HealthResponse>(content1, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var healthResponse1 = TestJsonHelper.Deserialize<HealthResponse>(content1);
 
-        var healthResponse2 = JsonSerializer.Deserialize<HealthResponse>(content2, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var healthResponse2 = TestJsonHelper.Deserialize<HealthResponse>(content2);
 
         healthResponse1!.Status.Should().Be(healthResponse2!.Status);
         healthResponse1.Environment.Should().Be(healthResponse2.Environment);

@@ -20,6 +20,12 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory> {
     [Fact]
     public async Task HealthEndpoint_ShouldRespondWithinAcceptableTime() {
         // Arrange
+        // Performance thresholds rationale:
+        // - Health endpoint (100ms): Simple status check, should be very fast for monitoring systems
+        // - Status endpoint (200ms): May include additional system checks, slightly more complex
+        // - Credits endpoint (500ms): May involve data retrieval/processing, more generous threshold
+        // - Average multi-request (150ms): Ensures consistent performance under load
+        // These thresholds provide a good balance between realistic expectations and quality assurance
         const int maxResponseTimeMs = 100;
         var stopwatch = new Stopwatch();
 

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using FluentAssertions;
 using RR.DTO;
 using RR.Tests.Infrastructure;
@@ -10,20 +9,17 @@ namespace RR.Tests.Endpoints;
 /// <summary>
 /// Integration tests for the Status endpoint
 /// </summary>
-public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory>
-{
+public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory> {
     private readonly TestWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public StatusEndpointTests(TestWebApplicationFactory factory)
-    {
+    public StatusEndpointTests(TestWebApplicationFactory factory) {
         _factory = factory;
         _client = _factory.CreateClient();
     }
 
     [Fact]
-    public async Task GetStatus_ShouldReturnOk_WithValidStatusResponse()
-    {
+    public async Task GetStatus_ShouldReturnOk_WithValidStatusResponse() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
 
@@ -32,10 +28,7 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory>
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
 
         var content = await response.Content.ReadAsStringAsync();
-        var statusResponse = JsonSerializer.Deserialize<StatusResponse>(content, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var statusResponse = TestJsonHelper.Deserialize<StatusResponse>(content);
 
         statusResponse.Should().NotBeNull();
         statusResponse!.ApplicationName.Should().Be("RR.Http");
@@ -46,17 +39,13 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task GetStatus_ShouldIncludeExpectedEndpoints()
-    {
+    public async Task GetStatus_ShouldIncludeExpectedEndpoints() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
 
         // Assert
         var content = await response.Content.ReadAsStringAsync();
-        var statusResponse = JsonSerializer.Deserialize<StatusResponse>(content, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var statusResponse = TestJsonHelper.Deserialize<StatusResponse>(content);
 
         statusResponse!.AvailableEndpoints.Should().Contain(e => e.Path.Contains("/api/v1/health"));
         statusResponse.AvailableEndpoints.Should().Contain(e => e.Path.Contains("/api/v1/status"));
@@ -64,20 +53,15 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task GetStatus_ShouldHaveValidEndpointStructure()
-    {
+    public async Task GetStatus_ShouldHaveValidEndpointStructure() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
 
         // Assert
         var content = await response.Content.ReadAsStringAsync();
-        var statusResponse = JsonSerializer.Deserialize<StatusResponse>(content, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var statusResponse = TestJsonHelper.Deserialize<StatusResponse>(content);
 
-        statusResponse!.AvailableEndpoints.Should().AllSatisfy(endpoint =>
-        {
+        statusResponse!.AvailableEndpoints.Should().AllSatisfy(endpoint => {
             endpoint.Path.Should().NotBeNullOrWhiteSpace();
             endpoint.Method.Should().NotBeNullOrWhiteSpace();
             endpoint.Method.Should().BeOneOf("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS");
@@ -85,24 +69,19 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task GetStatus_ShouldReturnValidVersion()
-    {
+    public async Task GetStatus_ShouldReturnValidVersion() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
 
         // Assert
         var content = await response.Content.ReadAsStringAsync();
-        var statusResponse = JsonSerializer.Deserialize<StatusResponse>(content, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var statusResponse = TestJsonHelper.Deserialize<StatusResponse>(content);
 
         statusResponse!.Version.Should().MatchRegex(@"^\d+\.\d+\.\d+(\.\d+)?$");
     }
 
     [Fact]
-    public async Task GetStatus_ShouldHaveCorrectContentType()
-    {
+    public async Task GetStatus_ShouldHaveCorrectContentType() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
 
@@ -112,8 +91,7 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task GetStatus_ShouldIncludeRequiredFields()
-    {
+    public async Task GetStatus_ShouldIncludeRequiredFields() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
 

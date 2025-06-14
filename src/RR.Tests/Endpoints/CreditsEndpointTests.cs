@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using FluentAssertions;
 using RR.DTO;
 using RR.Tests.Infrastructure;
@@ -29,9 +28,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
 
         var content = await response.Content.ReadAsStringAsync();
-        var creditsResponse = JsonSerializer.Deserialize<CreditsResponse>(content, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var creditsResponse = TestJsonHelper.Deserialize<CreditsResponse>(content);
 
         creditsResponse.Should().NotBeNull();
         creditsResponse!.ApplicationName.Should().Be("ReadRiser API");
@@ -48,9 +45,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
 
         // Assert
         var content = await response.Content.ReadAsStringAsync();
-        var creditsResponse = JsonSerializer.Deserialize<CreditsResponse>(content, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var creditsResponse = TestJsonHelper.Deserialize<CreditsResponse>(content);
 
         creditsResponse!.Packages.Should().AllSatisfy(package => {
             package.Name.Should().NotBeNullOrWhiteSpace();
@@ -65,9 +60,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
 
         // Assert
         var content = await response.Content.ReadAsStringAsync();
-        var creditsResponse = JsonSerializer.Deserialize<CreditsResponse>(content, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var creditsResponse = TestJsonHelper.Deserialize<CreditsResponse>(content);
 
         creditsResponse!.TotalPackages.Should().Be(creditsResponse.Packages.Count);
     }
@@ -79,9 +72,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
 
         // Assert
         var content = await response.Content.ReadAsStringAsync();
-        var creditsResponse = JsonSerializer.Deserialize<CreditsResponse>(content, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var creditsResponse = TestJsonHelper.Deserialize<CreditsResponse>(content);
 
         creditsResponse!.ApplicationVersion.Should().MatchRegex(@"^\d+\.\d+\.\d+(\.\d+)?$");
     }
@@ -123,13 +114,9 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         var content1 = await response1.Content.ReadAsStringAsync();
         var content2 = await response2.Content.ReadAsStringAsync();
 
-        var creditsResponse1 = JsonSerializer.Deserialize<CreditsResponse>(content1, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var creditsResponse1 = TestJsonHelper.Deserialize<CreditsResponse>(content1);
 
-        var creditsResponse2 = JsonSerializer.Deserialize<CreditsResponse>(content2, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var creditsResponse2 = TestJsonHelper.Deserialize<CreditsResponse>(content2);
 
         creditsResponse1!.ApplicationName.Should().Be(creditsResponse2!.ApplicationName);
         creditsResponse1.ApplicationVersion.Should().Be(creditsResponse2.ApplicationVersion);
