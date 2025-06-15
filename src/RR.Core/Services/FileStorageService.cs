@@ -1,9 +1,13 @@
-namespace RR.Http.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using RR.Core.Interfaces;
+
+namespace RR.Core.Services;
 
 /// <summary>
 /// Service for handling physical file storage operations
 /// </summary>
-public class FileStorageService {
+public class FileStorageService : IFileStorageService {
     private readonly string _storagePath;
 
     public FileStorageService(IConfiguration configuration) {

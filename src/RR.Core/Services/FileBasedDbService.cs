@@ -1,12 +1,14 @@
 using System.Text.Json;
-using RR.Http.Models;
+using Microsoft.Extensions.Configuration;
+using RR.Core.Interfaces;
+using RR.Core.Models;
 
-namespace RR.Http.Services;
+namespace RR.Core.Services;
 
 /// <summary>
 /// File-based database service for storing users and file metadata
 /// </summary>
-public class FileBasedDbService {
+public class FileBasedDbService : IFileBasedDbService {
     private readonly string _dataPath;
     private readonly string _usersFilePath;
     private readonly string _filesFilePath;

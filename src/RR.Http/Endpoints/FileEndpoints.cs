@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using RR.Core.Interfaces;
 using RR.DTO;
-using RR.Http.Services;
 
 namespace RR.Http.Endpoints;
 
@@ -15,7 +18,7 @@ public static class FileEndpoints {
         group.MapPost("/upload", async (
             IFormFile file,
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            FileManagementService fileService) => {
+            IFileManagementService fileService) => {
                 try {
                     if (file == null || file.Length == 0) {
                         return Results.BadRequest(new { error = "No file provided" });
@@ -41,7 +44,7 @@ public static class FileEndpoints {
         // Get all files endpoint
         group.MapGet("/", (
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            FileManagementService fileService) => {
+            IFileManagementService fileService) => {
                 try {
                     var result = fileService.GetFilesForUser(currentUserId);
                     return Results.Ok(result);
@@ -60,7 +63,7 @@ public static class FileEndpoints {
         group.MapGet("/{id}/download", async (
             string id,
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            FileManagementService fileService) => {
+            IFileManagementService fileService) => {
                 try {
                     var (content, contentType, fileName) = await fileService.GetFileAsync(id, currentUserId);
                     return Results.File(content, contentType, fileName);
@@ -82,7 +85,7 @@ public static class FileEndpoints {
         group.MapGet("/{id}", (
             string id,
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            FileManagementService fileService) => {
+            IFileManagementService fileService) => {
                 try {
                     // Get file metadata by checking if it's in the user's accessible files
                     var filesResponse = fileService.GetFilesForUser(currentUserId);
@@ -110,7 +113,7 @@ public static class FileEndpoints {
             string id,
             [FromBody] ShareFileRequest request,
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            FileManagementService fileService) => {
+            IFileManagementService fileService) => {
                 try {
                     // Update the request with the file ID from the URL
                     var shareRequest = request with { FileId = id };

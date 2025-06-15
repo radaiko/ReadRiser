@@ -1,16 +1,18 @@
+using Microsoft.Extensions.Logging;
+using RR.Core.Interfaces;
+using RR.Core.Models;
 using RR.DTO;
-using RR.Http.Models;
 
-namespace RR.Http.Services;
+namespace RR.Core.Services;
 
 /// <summary>
 /// Service for initializing test data in the file-based database
 /// </summary>
 public class DataInitializationService {
-    private readonly FileBasedDbService _dbService;
+    private readonly IFileBasedDbService _dbService;
     private readonly ILogger<DataInitializationService> _logger;
 
-    public DataInitializationService(FileBasedDbService dbService, ILogger<DataInitializationService> logger) {
+    public DataInitializationService(IFileBasedDbService dbService, ILogger<DataInitializationService> logger) {
         _dbService = dbService;
         _logger = logger;
     }

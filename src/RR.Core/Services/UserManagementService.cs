@@ -1,15 +1,16 @@
+using RR.Core.Interfaces;
+using RR.Core.Models;
 using RR.DTO;
-using RR.Http.Models;
 
-namespace RR.Http.Services;
+namespace RR.Core.Services;
 
 /// <summary>
 /// Service for user management with role-based access control
 /// </summary>
-public class UserManagementService {
-    private readonly FileBasedDbService _dbService;
+public class UserManagementService : IUserManagementService {
+    private readonly IFileBasedDbService _dbService;
 
-    public UserManagementService(FileBasedDbService dbService) {
+    public UserManagementService(IFileBasedDbService dbService) {
         _dbService = dbService;
     }
 

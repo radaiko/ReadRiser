@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace RR.Http.Services;
@@ -17,9 +18,12 @@ public class TestAuthenticationHandler : AuthenticationHandler<AuthenticationSch
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync() {
         // For testing/development purposes, create a simple authenticated user
+        // Use the X-User-ID header if provided, otherwise use a default test user ID
+        var userId = Context.Request.Headers["X-User-ID"].FirstOrDefault() ?? "test-user-id";
+
         var claims = new[] {
             new Claim(ClaimTypes.Name, "testuser"),
-            new Claim(ClaimTypes.NameIdentifier, "test-user-id")
+            new Claim(ClaimTypes.NameIdentifier, userId)
         };
 
         var identity = new ClaimsIdentity(claims, "Test");

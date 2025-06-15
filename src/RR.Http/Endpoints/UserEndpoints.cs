@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using RR.Core.Interfaces;
 using RR.DTO;
-using RR.Http.Services;
 
 namespace RR.Http.Endpoints;
 
@@ -14,7 +17,7 @@ public static class UserEndpoints {
         group.MapPost("/", (
             [FromBody] CreateUserRequest request,
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            UserManagementService userService) => {
+            IUserManagementService userService) => {
                 try {
                     var result = userService.CreateUser(request, currentUserId);
                     return Results.Created($"/api/v1/users/{result.Id}", result);
@@ -35,7 +38,7 @@ public static class UserEndpoints {
         // Get all users endpoint
         group.MapGet("/", (
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            UserManagementService userService) => {
+            IUserManagementService userService) => {
                 try {
                     var users = userService.GetUsersForUser(currentUserId);
                     var response = new UsersListResponse(users, users.Count);
@@ -55,7 +58,7 @@ public static class UserEndpoints {
         group.MapGet("/{id}", (
             string id,
             [FromHeader(Name = "X-User-ID")] string currentUserId,
-            UserManagementService userService) => {
+            IUserManagementService userService) => {
                 try {
                     var user = userService.GetUserById(id, currentUserId);
                     if (user == null) {
