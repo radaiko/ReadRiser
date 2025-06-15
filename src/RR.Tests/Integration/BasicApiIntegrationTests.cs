@@ -10,17 +10,17 @@ namespace RR.Tests.Integration;
 
 [TestClass]
 public class BasicApiIntegrationTests {
-    private static TestWebApplicationFactory _factory = null!;
-    private static HttpClient _client = null!;
+    private TestWebApplicationFactory _factory = null!;
+    private HttpClient _client = null!;
 
-    [ClassInitialize]
-    public static void ClassInitialize(TestContext context) {
+    [TestInitialize]
+    public void TestInitialize() {
         _factory = new TestWebApplicationFactory();
         _client = _factory.CreateClient();
     }
 
-    [ClassCleanup]
-    public static void ClassCleanup() {
+    [TestCleanup]
+    public void TestCleanup() {
         _client?.Dispose();
         _factory?.Dispose();
     }

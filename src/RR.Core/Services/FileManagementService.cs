@@ -1,16 +1,18 @@
+using Microsoft.AspNetCore.Http;
+using RR.Core.Interfaces;
+using RR.Core.Models;
 using RR.DTO;
-using RR.Http.Models;
 
-namespace RR.Http.Services;
+namespace RR.Core.Services;
 
 /// <summary>
 /// Service for file management with role-based access control and sharing logic
 /// </summary>
-public class FileManagementService {
-    private readonly FileBasedDbService _dbService;
-    private readonly FileStorageService _storageService;
+public class FileManagementService : IFileManagementService {
+    private readonly IFileBasedDbService _dbService;
+    private readonly IFileStorageService _storageService;
 
-    public FileManagementService(FileBasedDbService dbService, FileStorageService storageService) {
+    public FileManagementService(IFileBasedDbService dbService, IFileStorageService storageService) {
         _dbService = dbService;
         _storageService = storageService;
     }
@@ -32,7 +34,7 @@ public class FileManagementService {
             UploaderId = uploaderId,
             OwnerId = uploaderId,
             SharedWith = new List<string>(),
-            SharingHistory = new List<Models.SharingHistoryEntry>(),
+            SharingHistory = new List<SharingHistoryEntryInternal>(),
             UploadedAt = DateTime.UtcNow,
             LastModified = DateTime.UtcNow,
             StoragePath = storagePath
@@ -120,7 +122,7 @@ public class FileManagementService {
                 }
 
                 // Add to sharing history
-                var historyEntry = new Models.SharingHistoryEntry {
+                var historyEntry = new SharingHistoryEntryInternal {
                     Id = Guid.NewGuid().ToString(),
                     SharedBy = sharerId,
                     SharedWith = targetUserId,
@@ -144,7 +146,7 @@ public class FileManagementService {
         );
     }
 
-    private static bool CanUserAccessFile(User user, FileEntity file) {
+    private bool CanUserAccessFile(User user, FileEntity file) {
         // Owner can always access
         if (file.OwnerId == user.Id) {
             return true;
@@ -162,19 +164,13 @@ public class FileManagementService {
 
         // Parents can access files owned by their kids
         if (user.Role == UserRole.Parent) {
-            var fileOwner = GetUserFromFile(file.OwnerId);
+            var fileOwner = _dbService.GetUserById(file.OwnerId);
             if (fileOwner?.Role == UserRole.Kid && fileOwner.ParentId == user.Id) {
                 return true;
             }
         }
 
         return false;
-    }
-
-    private static User? GetUserFromFile(string userId) {
-        // This would need to be injected or passed in a real implementation
-        // For now, we'll return null and rely on the sharing logic
-        return null;
     }
 
     private static bool CanUserShareWithUser(User sharer, User target) {

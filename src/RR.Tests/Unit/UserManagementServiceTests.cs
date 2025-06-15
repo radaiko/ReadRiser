@@ -1,15 +1,16 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using RR.Core.Interfaces;
+using RR.Core.Models;
+using RR.Core.Services;
 using RR.DTO;
-using RR.Http.Models;
-using RR.Http.Services;
 
 namespace RR.Tests.Unit;
 
 [TestClass]
 public class UserManagementServiceTests {
-    private FileBasedDbService _dbService = null!;
-    private UserManagementService _userService = null!;
+    private IFileBasedDbService _dbService = null!;
+    private IUserManagementService _userService = null!;
     private string _tempDir = null!;
 
     [TestInitialize]

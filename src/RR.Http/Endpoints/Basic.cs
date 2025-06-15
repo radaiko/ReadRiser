@@ -1,7 +1,12 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using RR.Core.Interfaces;
 using RR.DTO;
-using RR.Http.Services;
 
 namespace RRHttp.Endpoints;
 
@@ -69,7 +74,7 @@ public static class Basic {
         .WithOpenApi();
 
         // Credits endpoint with package license information
-        group.MapGet("/credits", async (PackageInfoService packageInfoService) => {
+        group.MapGet("/credits", async (IPackageInfoService packageInfoService) => {
             var packages = await packageInfoService.GetPackageInfoAsync();
             var assembly = Assembly.GetExecutingAssembly();
             var version = assembly.GetName().Version?.ToString() ?? "1.0.0";

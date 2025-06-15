@@ -1,14 +1,16 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
+using RR.Core.Interfaces;
 using RR.DTO;
 
-namespace RR.Http.Services;
+namespace RR.Core.Services;
 
 /// <summary>
 /// Service for gathering information about NuGet packages used in the application
 /// </summary>
-public class PackageInfoService {
+public class PackageInfoService : IPackageInfoService {
     private readonly ILogger<PackageInfoService> _logger;
     private readonly HttpClient _httpClient;
 

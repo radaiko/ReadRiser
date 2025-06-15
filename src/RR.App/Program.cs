@@ -1,5 +1,7 @@
 using System.Reflection;
 using Microsoft.OpenApi.Models;
+using RR.Core.Extensions;
+using RR.Core.Services;
 using RR.Http.Configuration;
 using RR.Http.Endpoints;
 using RR.Http.Services;
@@ -45,13 +47,11 @@ builder.Services.AddSwaggerGen(c => {
 // Add HTTP client for external API calls
 builder.Services.AddHttpClient();
 
-// Add custom services
+// Add Core business logic services
+builder.Services.AddCoreServices();
+
+// Add HTTP-specific services
 builder.Services.AddScoped<PackageInfoService>();
-builder.Services.AddSingleton<FileBasedDbService>();
-builder.Services.AddSingleton<FileStorageService>();
-builder.Services.AddScoped<UserManagementService>();
-builder.Services.AddScoped<FileManagementService>();
-builder.Services.AddScoped<DataInitializationService>();
 
 // Add API explorer services for endpoint discovery
 builder.Services.AddEndpointsApiExplorer();

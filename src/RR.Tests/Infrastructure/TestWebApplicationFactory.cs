@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using RR.Core.Interfaces;
+using RR.Core.Services;
 using RR.DTO;
 using RR.Http.Services;
 
@@ -14,16 +17,14 @@ namespace RR.Tests.Infrastructure;
 public class TestWebApplicationFactory : WebApplicationFactory<Program> {
     protected override void ConfigureWebHost(IWebHostBuilder builder) {
         builder.ConfigureServices(services => {
-            // Remove the real PackageInfoService and replace with a test implementation
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(PackageInfoService));
-
-            if (descriptor != null) {
+            // Remove all registrations of IPackageInfoService and replace with a test implementation
+            var descriptors = services.Where(d => d.ServiceType == typeof(IPackageInfoService)).ToList();
+            foreach (var descriptor in descriptors) {
                 services.Remove(descriptor);
             }
 
             // Add test implementation of PackageInfoService
-            services.AddSingleton<PackageInfoService, TestPackageInfoService>();
+            services.AddSingleton<IPackageInfoService, TestPackageInfoService>();
 
             // Override authentication with a test scheme
             services.AddAuthentication("Test")
@@ -46,18 +47,25 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program> {
 
         builder.UseEnvironment("Testing");
     }
+
+    protected override IHost CreateHost(IHostBuilder builder) {
+        var host = base.CreateHost(builder);
+
+        // Initialize test data
+        using (var scope = host.Services.CreateScope()) {
+            var dataInitService = scope.ServiceProvider.GetRequiredService<DataInitializationService>();
+            dataInitService.InitializeTestData();
+        }
+
+        return host;
+    }
 }
 
 /// <summary>
 /// Test implementation of PackageInfoService for testing
 /// </summary>
-public class TestPackageInfoService : PackageInfoService {
-    public TestPackageInfoService() : base(
-        Microsoft.Extensions.Logging.Abstractions.NullLogger<PackageInfoService>.Instance,
-        new HttpClient()) {
-    }
-
-    public override async Task<List<PackageInfo>> GetPackageInfoAsync() {
+public class TestPackageInfoService : IPackageInfoService {
+    public async Task<List<PackageInfo>> GetPackageInfoAsync() {
         await Task.Delay(1); // Simulate async operation
         return new List<PackageInfo>
         {
