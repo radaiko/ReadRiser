@@ -1,24 +1,32 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RR.DTO;
 using RR.Tests.Infrastructure;
-using Xunit;
 
 namespace RR.Tests.Endpoints;
 
 /// <summary>
 /// Integration tests for the Credits endpoint
 /// </summary>
-public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
-    private readonly TestWebApplicationFactory _factory;
-    private readonly HttpClient _client;
+[TestClass]
+public class CreditsEndpointTests {
+    private static TestWebApplicationFactory _factory = null!;
+    private static HttpClient _client = null!;
 
-    public CreditsEndpointTests(TestWebApplicationFactory factory) {
-        _factory = factory;
+    [ClassInitialize]
+    public static void ClassInitialize(TestContext context) {
+        _factory = new TestWebApplicationFactory();
         _client = _factory.CreateClient();
     }
 
-    [Fact]
+    [ClassCleanup]
+    public static void ClassCleanup() {
+        _client?.Dispose();
+        _factory?.Dispose();
+    }
+
+    [TestMethod]
     public async Task GetCredits_ShouldReturnOk_WithValidCreditsResponse() {
         // Act
         var response = await _client.GetAsync("/api/v1/credits");
@@ -38,7 +46,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         creditsResponse.TotalPackages.Should().BeGreaterThan(0);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetCredits_ShouldReturnValidPackageInfo() {
         // Act
         var response = await _client.GetAsync("/api/v1/credits");
@@ -53,7 +61,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         });
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetCredits_ShouldHaveConsistentTotalPackagesCount() {
         // Act
         var response = await _client.GetAsync("/api/v1/credits");
@@ -65,7 +73,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         creditsResponse!.TotalPackages.Should().Be(creditsResponse.Packages.Count);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetCredits_ShouldReturnValidVersion() {
         // Act
         var response = await _client.GetAsync("/api/v1/credits");
@@ -77,7 +85,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         creditsResponse!.ApplicationVersion.Should().MatchRegex(@"^\d+\.\d+\.\d+(\.\d+)?$");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetCredits_ShouldHaveCorrectContentType() {
         // Act
         var response = await _client.GetAsync("/api/v1/credits");
@@ -87,7 +95,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         response.Content.Headers.ContentType?.CharSet.Should().BeOneOf("utf-8", null);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetCredits_ShouldIncludeRequiredFields() {
         // Act
         var response = await _client.GetAsync("/api/v1/credits");
@@ -101,7 +109,7 @@ public class CreditsEndpointTests : IClassFixture<TestWebApplicationFactory> {
         content.Should().Contain("totalPackages");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetCredits_ShouldBeIdempotent() {
         // Act
         var response1 = await _client.GetAsync("/api/v1/credits");
