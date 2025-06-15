@@ -1,0 +1,67 @@
+[
+  {
+    "id": "admin-001",
+    "username": "admin",
+    "displayName": "System Administrator",
+    "role": 1,
+    "parentId": null,
+    "createdAt": "2025-06-15T08:14:31.943654Z",
+    "createdBy": "system",
+    "childrenIds": []
+  },
+  {
+    "id": "parent-001",
+    "username": "parent1",
+    "displayName": "John Parent",
+    "role": 2,
+    "parentId": null,
+    "createdAt": "2025-06-15T08:14:31.946145Z",
+    "createdBy": "admin-001",
+    "childrenIds": [
+      "kid-001",
+      "kid-002"
+    ]
+  },
+  {
+    "id": "parent-002",
+    "username": "parent2",
+    "displayName": "Jane Parent",
+    "role": 2,
+    "parentId": null,
+    "createdAt": "2025-06-15T08:14:31.948625Z",
+    "createdBy": "admin-001",
+    "childrenIds": [
+      "kid-003"
+    ]
+  },
+  {
+    "id": "kid-001",
+    "username": "kid1",
+    "displayName": "Alice Kid",
+    "role": 3,
+    "parentId": "parent-001",
+    "createdAt": "2025-06-15T08:14:31.948769Z",
+    "createdBy": "parent-001",
+    "childrenIds": []
+  },
+  {
+    "id": "kid-002",
+    "username": "kid2",
+    "displayName": "Bob Kid",
+    "role": 3,
+    "parentId": "parent-001",
+    "createdAt": "2025-06-15T08:14:31.948858Z",
+    "createdBy": "parent-001",
+    "childrenIds": []
+  },
+  {
+    "id": "kid-003",
+    "username": "kid3",
+    "displayName": "Charlie Kid",
+    "role": 3,
+    "parentId": "parent-002",
+    "createdAt": "2025-06-15T08:14:31.948963Z",
+    "createdBy": "parent-002",
+    "childrenIds": []
+  }
+]

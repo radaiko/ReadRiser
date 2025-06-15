@@ -23,7 +23,6 @@ public static class Basic {
         .WithName("GetHealth")
         .WithSummary("Check API Health")
         .WithDescription("Returns the health status of the API service. Use this endpoint to verify that the API is running and accessible.")
-        .WithTags("Health")
         .Produces<HealthResponse>(StatusCodes.Status200OK, "application/json")
         .ProducesValidationProblem()
         .WithOpenApi();
@@ -65,7 +64,6 @@ public static class Basic {
         .WithName("GetStatus")
         .WithSummary("Get API Status and Available Endpoints")
         .WithDescription("Returns comprehensive API status information including version, environment, and automatically discovered endpoints. Useful for API discovery and monitoring.")
-        .WithTags("Status", "Discovery")
         .Produces<StatusResponse>(StatusCodes.Status200OK, "application/json")
         .ProducesValidationProblem()
         .WithOpenApi();
@@ -89,7 +87,6 @@ public static class Basic {
         .WithName("GetCredits")
         .WithSummary("Get Third-Party Package Credits and Licenses")
         .WithDescription("Returns comprehensive information about all third-party packages used in the application, including their licenses, authors, and project URLs. This endpoint helps ensure legal compliance by providing transparent attribution for all dependencies.")
-        .WithTags("Legal", "Attribution", "Licenses")
         .Produces<CreditsResponse>(StatusCodes.Status200OK, "application/json")
         .ProducesValidationProblem()
         .WithOpenApi();

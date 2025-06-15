@@ -1,23 +1,31 @@
 using System.Diagnostics;
 using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RR.Tests.Infrastructure;
-using Xunit;
 
 namespace RR.Tests.Performance;
 
 /// <summary>
 /// Performance tests for API endpoints
 /// </summary>
-public class PerformanceTests : IClassFixture<TestWebApplicationFactory> {
-    private readonly TestWebApplicationFactory _factory;
-    private readonly HttpClient _client;
+[TestClass]
+public class PerformanceTests {
+    private static TestWebApplicationFactory _factory = null!;
+    private static HttpClient _client = null!;
 
-    public PerformanceTests(TestWebApplicationFactory factory) {
-        _factory = factory;
+    [ClassInitialize]
+    public static void ClassInitialize(TestContext context) {
+        _factory = new TestWebApplicationFactory();
         _client = _factory.CreateClient();
     }
 
-    [Fact]
+    [ClassCleanup]
+    public static void ClassCleanup() {
+        _client?.Dispose();
+        _factory?.Dispose();
+    }
+
+    [TestMethod]
     public async Task HealthEndpoint_ShouldRespondWithinAcceptableTime() {
         // Arrange
         // Performance thresholds rationale:
@@ -40,7 +48,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory> {
             $"Health endpoint should respond within {maxResponseTimeMs}ms");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task StatusEndpoint_ShouldRespondWithinAcceptableTime() {
         // Arrange
         const int maxResponseTimeMs = 200;
@@ -57,7 +65,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory> {
             $"Status endpoint should respond within {maxResponseTimeMs}ms");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task CreditsEndpoint_ShouldRespondWithinAcceptableTime() {
         // Arrange
         const int maxResponseTimeMs = 500;
@@ -74,7 +82,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory> {
             $"Credits endpoint should respond within {maxResponseTimeMs}ms");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task MultipleRequests_ShouldMaintainPerformance() {
         // Arrange
         const int numberOfRequests = 50;
@@ -98,7 +106,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory> {
             "No single request should take more than 3x the expected average time");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task MemoryUsage_ShouldRemainStable() {
         // Arrange - warm up the application first to avoid initialization overhead
         const int warmupRequests = 10;

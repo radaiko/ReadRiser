@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 using RR.Http.Configuration;
+using RR.Http.Endpoints;
 using RR.Http.Services;
 using RRHttp.Endpoints;
 using Scalar.AspNetCore;
@@ -10,6 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Add authentication and authorization services
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
 
 // Add Swagger services for better schema generation
 builder.Services.AddSwaggerGen(c => {
@@ -42,6 +47,11 @@ builder.Services.AddHttpClient();
 
 // Add custom services
 builder.Services.AddScoped<PackageInfoService>();
+builder.Services.AddSingleton<FileBasedDbService>();
+builder.Services.AddSingleton<FileStorageService>();
+builder.Services.AddScoped<UserManagementService>();
+builder.Services.AddScoped<FileManagementService>();
+builder.Services.AddScoped<DataInitializationService>();
 
 // Add API explorer services for endpoint discovery
 builder.Services.AddEndpointsApiExplorer();
@@ -62,8 +72,20 @@ if (app.Environment.IsDevelopment()) {
 
 app.UseHttpsRedirection();
 
+// Add authentication middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Initialize test data
+using (var scope = app.Services.CreateScope()) {
+    var dataInitService = scope.ServiceProvider.GetRequiredService<DataInitializationService>();
+    dataInitService.InitializeTestData();
+}
+
 // Map endpoints
 app.MapBasicEndpoints();
+app.MapUserEndpoints();
+app.MapFileEndpoints();
 
 app.Run();
 

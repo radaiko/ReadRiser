@@ -1,24 +1,32 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RR.DTO;
 using RR.Tests.Infrastructure;
-using Xunit;
 
 namespace RR.Tests.Endpoints;
 
 /// <summary>
 /// Integration tests for the Status endpoint
 /// </summary>
-public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory> {
-    private readonly TestWebApplicationFactory _factory;
-    private readonly HttpClient _client;
+[TestClass]
+public class StatusEndpointTests {
+    private static TestWebApplicationFactory _factory = null!;
+    private static HttpClient _client = null!;
 
-    public StatusEndpointTests(TestWebApplicationFactory factory) {
-        _factory = factory;
+    [ClassInitialize]
+    public static void ClassInitialize(TestContext context) {
+        _factory = new TestWebApplicationFactory();
         _client = _factory.CreateClient();
     }
 
-    [Fact]
+    [ClassCleanup]
+    public static void ClassCleanup() {
+        _client?.Dispose();
+        _factory?.Dispose();
+    }
+
+    [TestMethod]
     public async Task GetStatus_ShouldReturnOk_WithValidStatusResponse() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
@@ -38,7 +46,7 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory> {
         statusResponse.AvailableEndpoints.Should().NotBeEmpty();
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetStatus_ShouldIncludeExpectedEndpoints() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
@@ -52,7 +60,7 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory> {
         statusResponse.AvailableEndpoints.Should().Contain(e => e.Path.Contains("/api/v1/credits"));
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetStatus_ShouldHaveValidEndpointStructure() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
@@ -68,7 +76,7 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory> {
         });
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetStatus_ShouldReturnValidVersion() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
@@ -80,7 +88,7 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory> {
         statusResponse!.Version.Should().MatchRegex(@"^\d+\.\d+\.\d+(\.\d+)?$");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetStatus_ShouldHaveCorrectContentType() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");
@@ -90,7 +98,7 @@ public class StatusEndpointTests : IClassFixture<TestWebApplicationFactory> {
         response.Content.Headers.ContentType?.CharSet.Should().BeOneOf("utf-8", null);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetStatus_ShouldIncludeRequiredFields() {
         // Act
         var response = await _client.GetAsync("/api/v1/status");

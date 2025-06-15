@@ -1,24 +1,32 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RR.DTO;
 using RR.Tests.Infrastructure;
-using Xunit;
 
 namespace RR.Tests.Endpoints;
 
 /// <summary>
 /// Integration tests for the Health endpoint
 /// </summary>
-public class HealthEndpointTests : IClassFixture<TestWebApplicationFactory> {
-    private readonly TestWebApplicationFactory _factory;
-    private readonly HttpClient _client;
+[TestClass]
+public class HealthEndpointTests {
+    private static TestWebApplicationFactory _factory = null!;
+    private static HttpClient _client = null!;
 
-    public HealthEndpointTests(TestWebApplicationFactory factory) {
-        _factory = factory;
+    [ClassInitialize]
+    public static void ClassInitialize(TestContext context) {
+        _factory = new TestWebApplicationFactory();
         _client = _factory.CreateClient();
     }
 
-    [Fact]
+    [ClassCleanup]
+    public static void ClassCleanup() {
+        _client?.Dispose();
+        _factory?.Dispose();
+    }
+
+    [TestMethod]
     public async Task GetHealth_ShouldReturnOk_WithValidHealthResponse() {
         // Act
         var response = await _client.GetAsync("/api/v1/health");
@@ -36,7 +44,7 @@ public class HealthEndpointTests : IClassFixture<TestWebApplicationFactory> {
         healthResponse.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetHealth_ShouldReturnConsistentResponse_WhenCalledMultipleTimes() {
         // Act
         var response1 = await _client.GetAsync("/api/v1/health");
@@ -57,7 +65,7 @@ public class HealthEndpointTests : IClassFixture<TestWebApplicationFactory> {
         healthResponse1.Environment.Should().Be(healthResponse2.Environment);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetHealth_ShouldHaveCorrectContentType() {
         // Act
         var response = await _client.GetAsync("/api/v1/health");
@@ -67,7 +75,7 @@ public class HealthEndpointTests : IClassFixture<TestWebApplicationFactory> {
         response.Content.Headers.ContentType?.CharSet.Should().BeOneOf("utf-8", null);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task GetHealth_ShouldIncludeRequiredFields() {
         // Act
         var response = await _client.GetAsync("/api/v1/health");

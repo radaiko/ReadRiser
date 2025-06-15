@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RR.DTO;
 using RR.Http.Services;
@@ -22,6 +24,24 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program> {
 
             // Add test implementation of PackageInfoService
             services.AddSingleton<PackageInfoService, TestPackageInfoService>();
+
+            // Override authentication with a test scheme
+            services.AddAuthentication("Test")
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("Test", null);
+
+            // Add authorization services for tests
+            services.AddAuthorization();
+
+            // Configure test-specific file storage paths
+            services.AddSingleton<IConfiguration>(sp => {
+                var config = new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string?> {
+                        ["FileStorage:DatabasePath"] = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()),
+                        ["FileStorage:FilesPath"] = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+                    })
+                    .Build();
+                return config;
+            });
         });
 
         builder.UseEnvironment("Testing");

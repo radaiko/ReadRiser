@@ -1,23 +1,31 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RR.Tests.Infrastructure;
-using Xunit;
 
 namespace RR.Tests.Integration;
 
 /// <summary>
 /// Integration tests for overall API functionality
 /// </summary>
-public class ApiIntegrationTests : IClassFixture<TestWebApplicationFactory> {
-    private readonly TestWebApplicationFactory _factory;
-    private readonly HttpClient _client;
+[TestClass]
+public class ApiIntegrationTests {
+    private static TestWebApplicationFactory _factory = null!;
+    private static HttpClient _client = null!;
 
-    public ApiIntegrationTests(TestWebApplicationFactory factory) {
-        _factory = factory;
+    [ClassInitialize]
+    public static void ClassInitialize(TestContext context) {
+        _factory = new TestWebApplicationFactory();
         _client = _factory.CreateClient();
     }
 
-    [Fact]
+    [ClassCleanup]
+    public static void ClassCleanup() {
+        _client?.Dispose();
+        _factory?.Dispose();
+    }
+
+    [TestMethod]
     public async Task AllEndpoints_ShouldBeAccessible() {
         // Arrange
         var endpoints = new[]
@@ -34,7 +42,7 @@ public class ApiIntegrationTests : IClassFixture<TestWebApplicationFactory> {
         }
     }
 
-    [Fact]
+    [TestMethod]
     public async Task SwaggerEndpoint_ShouldBeAccessible_InDevelopment() {
         // Arrange
         var devFactory = new TestWebApplicationFactory();
@@ -47,7 +55,7 @@ public class ApiIntegrationTests : IClassFixture<TestWebApplicationFactory> {
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task InvalidEndpoint_ShouldReturn404() {
         // Act
         var response = await _client.GetAsync("/api/v1/nonexistent");
@@ -56,7 +64,7 @@ public class ApiIntegrationTests : IClassFixture<TestWebApplicationFactory> {
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task ApiEndpoints_ShouldReturnJsonContentType() {
         // Arrange
         var endpoints = new[]
@@ -74,7 +82,7 @@ public class ApiIntegrationTests : IClassFixture<TestWebApplicationFactory> {
         }
     }
 
-    [Fact]
+    [TestMethod]
     public async Task ConcurrentRequests_ShouldBeHandledCorrectly() {
         // Arrange
         var tasks = new List<Task<HttpResponseMessage>>();
@@ -94,7 +102,7 @@ public class ApiIntegrationTests : IClassFixture<TestWebApplicationFactory> {
         });
     }
 
-    [Fact]
+    [TestMethod]
     public async Task HealthCheck_ShouldRespondQuickly() {
         // Arrange
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
